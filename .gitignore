@@ -28,3 +28,4 @@ venv/
 # Production
 settings.py
 logs/
+assets/cert.pem
