@@ -24,3 +24,7 @@ __pycache__/
 
 # Virtual Environment
 venv/
+
+# Production
+settings.py
+logs/
