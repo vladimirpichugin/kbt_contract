@@ -29,3 +29,4 @@ venv/
 settings.py
 logs/
 assets/cert.pem
+assets/contract_template.docx
