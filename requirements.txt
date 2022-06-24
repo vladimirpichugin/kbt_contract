@@ -1,7 +1,7 @@
-python-docx==0.8.11
-docx2pdf~=0.1.8
-python-dateutil==2.8.2
+requests==2.27.1
+python-dateutil
 pymongo==3.10.1
 flask==1.1.1
 blinker==1.4
-requests
+docx2pdf~=0.1.8
+python-docx==0.8.11

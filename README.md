@@ -3,7 +3,7 @@
 
 [![KBT Contract Download](https://img.shields.io/badge/KBT_Contract-download-blue.svg?logo=github&style=for-the-badge)](https://github.com/vladimirpichugin/kbt_contract/archive/master.zip)
 
-[![Python](https://img.shields.io/badge/Python->%3D3.7-blue.svg?style=flat-square)](https://python.org)
+[![Python](https://img.shields.io/badge/Python-3.6-red.svg?style=flat-square)](https://python.org)
 [![pymongo](https://img.shields.io/badge/pymongo-3.10.1-green.svg?style=flat-square)](https://pypi.org/project/requests)
 [![requests](https://img.shields.io/badge/requests-2.27.1-red.svg?style=flat-square)](https://pypi.org/project/requests)
 [![python-dateutil](https://img.shields.io/badge/python--dateutil-2.8.2-darkgreen.svg?style=flat-square)](https://pypi.org/project/python-dateutil)
@@ -14,7 +14,7 @@
 ***
 
 ## Для начала
-> **Python 3.7**
+> **Python 3.6**
 
 Если есть какие-то ошибки при запуске, то первым делом выполнить команду для установки зависимостей
 ```shell
