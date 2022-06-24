@@ -29,11 +29,13 @@ class ContractGenerator:
         )
 
         studentDocWhenIssuedDt = contract.get_dt('student_docWhenIssued')
-        studentDocWhenIssued = '{day} {month} {year}'.format(
-            day=studentDocWhenIssuedDt.strftime('%d'),
-            month=L10n.get('months.gen.{month}'.format(month=studentDocWhenIssuedDt.strftime('%B'))),
-            year=studentDocWhenIssuedDt.strftime('%Y')
-        )
+        studentDocWhenIssued = ''
+        if studentDocWhenIssuedDt:
+            studentDocWhenIssued = '{day} {month} {year}'.format(
+                day=studentDocWhenIssuedDt.strftime('%d'),
+                month=L10n.get('months.gen.{month}'.format(month=studentDocWhenIssuedDt.strftime('%B'))),
+                year=studentDocWhenIssuedDt.strftime('%Y')
+            )
 
         studentSex = L10n.get('sex.female') if contract.get_sex('student') == 'female' else L10n.get('sex.male')
         representativeSex = L10n.get('sex.female') if contract.get_sex('customer') == 'female' else L10n.get('sex.male')
