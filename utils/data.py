@@ -90,6 +90,9 @@ class Contract(SDict):
     def get_contract_id(self):
         return self.getraw('contract_id')
 
+    def get_session_id(self):
+        return self.getraw('session_id')
+
     def get_program(self):
         return self.getraw('program')
 
