@@ -8,6 +8,7 @@ from flask import Flask, request, Response, abort, request_started, request_fini
     got_request_exception, request_tearing_down
 
 from utils import *
+import storage
 
 logger.debug(f"Initializing {Settings.app_name} (v{Settings.app_version})..")
 
@@ -230,14 +231,19 @@ class ContractAPI:
 
                 contract = Contract().create_from_form_data(f)
                 contract['_id'] = str(uuid.uuid4())
-                contract['confirm_code'] = gen_confirmation_code()
+                contract['confirm_code'] = confirm_code = gen_confirmation_code()
+                contract['status'] = 0
 
                 contract['timestamp_created'] = contract['timestamp_agreement_accepted'] = int(time.time())
 
                 contract_id = contract.get_obj_id()
 
                 contract['contract_id'] = gen_contract_id()
-                contract_file = ContractGenerator.create_contract('example', contract)
+                contract['session_id'] = session_id = str(uuid.uuid4())
+
+                logger.debug(f'contract_id: {contract_id} session_id: {session_id} confirm_code: {confirm_code}')
+
+                storage.storage.save_contract(contract)
 
                 from_addr = Settings.SMTP_USER
                 from_pass = Settings.SMTP_PASS
@@ -250,7 +256,7 @@ class ContractAPI:
                 )
 
                 logger.debug(f"[message id:{message_id}] Preparing mail-{message_type} ({contract_id})")
-
+                
                 headers = Mail.create_headers(message_id=message_id, contract_id=contract_id, message_type=message_type, service=Settings.app_name)
 
                 multipart = Mail.create_multipart(from_addr, Settings.SMTP_NAME, to_addr, to_name, subject, html, plain,
@@ -272,7 +278,8 @@ class ContractAPI:
                 logger.debug(f"response: {response}")
 
                 resp = {
-                    'email': contract.get_to_addr()
+                    'email': contract.get_to_addr(),
+                    'sessionId': contract.get_session_id()
                 }
 
                 return ok(resp)
@@ -284,8 +291,78 @@ class ContractAPI:
         @app.route('/v1/contract/confirm', endpoint='contract_confirm_route', methods=['POST'])
         def contract_confirm_route():
             try:
-                #contract_link = 'https://kbt.moscow/example.pdf'
-                contract_link = 'http://localhost:63342/kbt.moscow/contracts/example.pdf?_ijt=15tbd1187ngmnk8nmqlvgbgp7k&_ij_reload=RELOAD_ON_SAVE'
+                f = request.form
+
+                args = {
+                    'email': {},
+                    'sessionId': {},
+                    'confirmationCode': {}
+                }
+
+                invalid_args = []
+                f = f.to_dict()
+                for key, value in f.items():
+                    f[key] = value.strip()
+
+                for r_arg in args.keys():
+                    if r_arg not in f.keys():
+                        invalid_args.append({'argument': r_arg, 'errorMessage': 'Required argument not found.', 'errorCode': 'REQUIRED_ARGUMENT_NOT_FOUND'})
+                    elif f.get(r_arg).strip() == '' and not args.get(r_arg).get('empty'):
+                        invalid_args.append({'argument': r_arg, 'errorMessage': 'Empty argument value.', 'errorCode': 'EMPTY_ARGUMENT_VALUE'})
+
+                if invalid_args:
+                    return failed({
+                        "message": "Bad Request: Invalid Form Data",
+                        "code": "INVALID_FORM_DATA",
+                        "invalid_args": invalid_args
+                    }, status=400)
+
+                email = f.get('email')
+                session_id = f.get('sessionId')
+                confirmationCode = f.get('confirmationCode')
+
+                contract = storage.storage.get_contract_by_session_id(session_id)
+                if not contract:
+                    return failed({
+                        "message": "Session Not Found",
+                        "code": "SESSION_NOT_FOUND",
+                        "invalid_args": [{
+                            "argument": "sessionId",
+                            "errorCode": "SESSION_NOT_FOUND",
+                            "errorMessage": "Session Not Found"
+                        }]
+                    }, status=404)
+
+                if contract.get('status') == 1:
+                    return failed({
+                        "message": "Session Contract Not Found",
+                        "code": "SESSION_CONTRACT_NOT_FOUND",
+                        "invalid_args": [{
+                            "argument": "sessionId",
+                            "errorCode": "SESSION_CONTRACT_NOT_FOUND",
+                            "errorMessage": "Session is out of date"
+                        }]
+                    }, status=404)
+
+                if confirmationCode != contract.get('confirm_code'):
+                    return failed({
+                        "message": "Wrong Session Confirmation Code",
+                        "code": "WRONG_SESSION_CONFIRMATION_CODE",
+                        "invalid_args": [{
+                            "argument": "confirmationCode",
+                            "errorCode": "WRONG_SESSION_CONFIRMATION_CODE",
+                            "errorMessage": "Wrong Session Confirmation Code"
+                        }]
+                    }, status=403)
+
+                contract['status'] = 1
+                contract['file_id'] = file_id = str(uuid.uuid4())
+
+                storage.storage.save_contract(contract)
+
+                ContractGenerator.create_contract(file_id, contract)
+
+                contract_link = f'https://kbt.moscow/contracts/{file_id}.pdf?session_id={session_id}'
 
                 resp = {
                     'contract_link': contract_link
